@@ -23,10 +23,70 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  // TODO(task): Implement Auth screen.
+  late final TextEditingController _loginController;
+  late final TextEditingController _passwordController;
+
+  @override
+  void initState() {
+    super.initState();
+    _loginController = TextEditingController();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _loginController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    throw UnimplementedError();
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(28.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _LoginInputField(
+                controller: _loginController,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _PasswordInputField(
+                controller: _passwordController,
+              ),
+            ), // _ChatTextField(onSendPressed: _onSendPressed),utt
+            _LoginButton(
+              onPressed: () {
+                _loginToSurf(
+                  _loginController.text,
+                  _passwordController.text,
+                );
+              },
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _loginToSurf(String login, String password) async {
+    try {
+      final TokenDto token = await widget.authRepository.signIn(
+        login: login,
+        password: password,
+      );
+
+      // ignore: use_build_context_synchronously
+      _pushToChat(context, token);
+    } on Exception catch (e) {
+      print(e);
+    }
   }
 
   void _pushToChat(BuildContext context, TokenDto token) {
@@ -42,5 +102,59 @@ class _AuthScreenState extends State<AuthScreen> {
         },
       ),
     );
+  }
+}
+
+class _LoginInputField extends StatelessWidget {
+  const _LoginInputField({required this.controller, Key? key})
+      : super(key: key);
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.person),
+        labelText: 'Пароль',
+        // focusedBorder: OutlineInputBorder(
+        //     borderSide: BorderSide(color: Colors.green,)),
+        border: OutlineInputBorder(borderSide: BorderSide()),
+      ),
+    );
+  }
+}
+
+class _PasswordInputField extends StatelessWidget {
+  const _PasswordInputField({required this.controller, Key? key})
+      : super(key: key);
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.lock),
+        labelText: 'Пароль',
+        border: OutlineInputBorder(borderSide: BorderSide()),
+      ),
+    );
+  }
+}
+
+class _LoginButton extends StatelessWidget {
+  const _LoginButton({required this.onPressed, Key? key}) : super(key: key);
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialButton(
+        color: Theme.of(context).colorScheme.secondary,
+        child: const Text("Далее"),
+        onPressed: onPressed);
   }
 }
