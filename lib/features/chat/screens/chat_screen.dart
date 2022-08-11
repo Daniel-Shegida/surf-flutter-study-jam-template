@@ -5,6 +5,7 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.da
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
+import 'package:surf_practice_chat_flutter/features/utils/color_utils.dart';
 
 /// Main screen of chat app, containing messages.
 class ChatScreen extends StatefulWidget {
@@ -179,7 +180,8 @@ class _ChatMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
-      color: chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary.withOpacity(.1) : null,
+      borderRadius: BorderRadius.circular(25.0),
+      color: chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary.withOpacity(.1) : Colors.red,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 18,
@@ -195,7 +197,8 @@ class _ChatMessage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    chatData.chatUserDto.name ?? '',
+                    // chatData.chatUserDto.name ?? '',
+              chatData.runtimeType.toString(),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
@@ -228,7 +231,10 @@ class _ChatAvatar extends StatelessWidget {
       width: _size,
       height: _size,
       child: Material(
-        color: colorScheme.primary,
+        // color: colorScheme.primary,
+        color:  userData.name != null
+            ? ColorUtils.stringToColor(userData.name!)
+            : colorScheme.primary,
         shape: const CircleBorder(),
         child: Center(
           child: Text(
