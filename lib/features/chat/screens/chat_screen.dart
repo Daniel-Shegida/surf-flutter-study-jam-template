@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
 
 /// Main screen of chat app, containing messages.
 class ChatScreen extends StatefulWidget {
@@ -22,7 +24,20 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _nameEditingController = TextEditingController();
 
+  late final LocalRepository _localRepository;
+
+
   Iterable<ChatMessageDto> _currentMessages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _localRepository = context.read<LocalRepository>();
+    print("screen 2");
+    print(_localRepository.getToken(),);
+    print("screen 2");
+
+  }
 
   @override
   Widget build(BuildContext context) {
