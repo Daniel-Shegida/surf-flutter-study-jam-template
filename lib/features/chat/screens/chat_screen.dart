@@ -33,10 +33,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _localRepository = context.read<LocalRepository>();
-    print("screen 2");
-    print(_localRepository.getToken(),);
-    print("screen 2");
-
   }
 
   @override

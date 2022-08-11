@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:surf_practice_chat_flutter/features/auth/exceptions/auth_exception.dart';
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
+import 'package:surf_practice_chat_flutter/features/utils/dialog_controller.dart';
 import 'package:surf_study_jam/surf_study_jam.dart';
 
 /// Screen for authorization process.
@@ -27,6 +29,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   late final TextEditingController _loginController;
   late final TextEditingController _passwordController;
+  final DialogController dialogController = const DialogController();
 
   late final LocalRepository _localRep;
 
@@ -71,6 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 _loginToSurf(
                   _loginController.text,
                   _passwordController.text,
+                  context,
                 );
               },
             )
@@ -80,7 +84,11 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  void _loginToSurf(String login, String password) async {
+  void _loginToSurf(
+    String login,
+    String password,
+    BuildContext context,
+  ) async {
     try {
       final TokenDto token = await widget.authRepository.signIn(
         login: login,
@@ -90,8 +98,17 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // ignore: use_build_context_synchronously
       _pushToChat(context, token);
-    } on Exception catch (e) {
-      print(e);
+    } on AuthException catch (e) {
+      dialogController.showSnackBar(
+        context,
+        e.message,
+      );
+    }
+    on Exception catch (_) {
+      dialogController.showSnackBar(
+        context,
+        'wow unknown error'
+      );
     }
   }
 
@@ -124,8 +141,6 @@ class _LoginInputField extends StatelessWidget {
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.person),
         labelText: 'Пароль',
-        // focusedBorder: OutlineInputBorder(
-        //     borderSide: BorderSide(color: Colors.green,)),
         border: OutlineInputBorder(borderSide: BorderSide()),
       ),
     );
@@ -160,7 +175,7 @@ class _LoginButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialButton(
         color: Theme.of(context).colorScheme.secondary,
-        child: const Text("Далее"),
-        onPressed: onPressed);
+        onPressed: onPressed,
+        child: const Text("Далее"));
   }
 }
