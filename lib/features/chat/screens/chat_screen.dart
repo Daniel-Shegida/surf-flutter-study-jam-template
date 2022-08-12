@@ -209,19 +209,13 @@ class _ChatMessage extends StatelessWidget {
                   Text(chatData.message ?? ''),
                   if (chatData is ChatMessageImageDto || chatData is ChatMessageImageLocationDto) ...[
                     Wrap(
-                        children: get(chatData),
+                        children: getListOfImeges(chatData),
                     )
                   ],
                   if (chatData is ChatMessageGeolocationDto || chatData is ChatMessageImageLocationDto) ...[
                     TextButton(
                         onPressed: () async{
-                          final availableMaps = await MapLauncher.installedMaps;
-                          print(availableMaps); // [AvailableMap { mapName: Google Maps, mapType: google }, ...]
-
-                          await availableMaps.first.showMarker(
-                            coords: Coords(37.759392, -122.5107336),
-                            title: "Ocean Beach",
-                          );
+                          goToMapLocation(chatData);
                         },
                       child: Text("нажмите, чтобы отобразить геолокацию места"),)
                   ]
@@ -235,7 +229,7 @@ class _ChatMessage extends StatelessWidget {
   }
 }
 
-List<Widget> get(ChatMessageDto dto) {
+List<Widget> getListOfImeges(ChatMessageDto dto) {
   if (dto is ChatMessageImageDto ) {
     return dto.images.urls.map((url) => Image.network(url)).toList();
   } else if (dto is ChatMessageImageLocationDto ){
@@ -243,6 +237,22 @@ List<Widget> get(ChatMessageDto dto) {
   }
   else {
     return [];
+  }
+}
+
+void goToMapLocation(ChatMessageDto dto) async{
+  final availableMaps = await MapLauncher.installedMaps;
+
+  if (dto is ChatMessageGeolocationDto ) {
+    await availableMaps.first.showMarker(
+      coords: Coords(dto.location.latitude, dto.location.longitude),
+      title: "Ocean Beach",
+    );
+  } else if (dto is ChatMessageImageLocationDto ){
+    await availableMaps.first.showMarker(
+      coords: Coords(dto.location.latitude, dto.location.longitude),
+      title: "Ocean Beach",
+    );
   }
 }
 
