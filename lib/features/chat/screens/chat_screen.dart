@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
-import 'package:provider/provider.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_image_dto.dart';
@@ -10,7 +9,6 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.da
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/location_repository.dart';
-import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
 import 'package:surf_practice_chat_flutter/features/utils/color_utils.dart';
 
 /// Main screen of chat app, containing messages.
@@ -18,11 +16,14 @@ class ChatScreen extends StatefulWidget {
   /// Repository for chat functionality.
   final IChatRepository chatRepository;
   final ILocationRepository locationRepository;
+  final String topicName;
+
 
   /// Constructor for [ChatScreen].
   const ChatScreen({
     required this.chatRepository,
     required this.locationRepository,
+    required this.topicName,
     Key? key,
   }) : super(key: key);
 
@@ -31,7 +32,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _nameEditingController = TextEditingController();
+  late final TextEditingController _textController;
 
   bool isLocationMessage = false;
 
@@ -44,10 +45,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    // late final LocalRepository _localRepository;
+    _textController = TextEditingController();
 
     super.initState();
-    // _localRepository = context.read<LocalRepository>();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -59,8 +66,8 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(48),
         child: _ChatAppBar(
-          controller: _nameEditingController,
           onUpdatePressed: _onUpdatePressed,
+          topicName: widget.topicName,
         ),
       ),
       body: Column(
@@ -73,10 +80,11 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           _ChatTextField(
             onSendPressed: _onSendPressed,
-            isLocationMessage: this.isLocationMessage,
+            isLocationMessage: isLocationMessage,
             onGeoPressed: _onGeoPressed,
-            isImageSaving: this.isImageSaving,
+            isImageSaving: isImageSaving,
             onImagePressed: _onImagePressed,
+            controller: _textController,
           ),
         ],
       ),
@@ -93,6 +101,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _onSendPressed(String messageText) async {
     if (isImageSaving) {
       images = messageText;
+      setState(() {
+        isImageSaving = !isImageSaving;
+      });
     } else {
       final messages = await _sendMessage(messageText);
       setState(() {
@@ -120,6 +131,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     } else if (isLocationMessage) {
       final location = await widget.locationRepository.determinePosition();
+
       return widget.chatRepository.sendGeolocationMessage(
         location: ChatGeolocationDto(
           latitude: location.latitude,
@@ -167,15 +179,15 @@ class _ChatBody extends StatelessWidget {
 }
 
 class _ChatTextField extends StatelessWidget {
+  final TextEditingController controller;
   final ValueChanged<String> onSendPressed;
   final bool isLocationMessage;
   final bool isImageSaving;
   final VoidCallback onGeoPressed;
   final VoidCallback onImagePressed;
 
-  final _textEditingController = TextEditingController();
-
-  _ChatTextField({
+  const _ChatTextField({
+    required this.controller,
     required this.onSendPressed,
     required this.isLocationMessage,
     required this.onGeoPressed,
@@ -202,20 +214,20 @@ class _ChatTextField extends StatelessWidget {
             IconButton(
               onPressed: onImagePressed,
               icon: Icon(
-                isImageSaving ? Icons.image : Icons.abc,
+                isImageSaving ? Icons.image : Icons.text_fields,
                 color: colorScheme.onSurface,
               ),
             ),
             IconButton(
               onPressed: onGeoPressed,
               icon: Icon(
-                Icons.ac_unit,
+                Icons.place,
                 color: isLocationMessage ? Colors.blue : Colors.black,
               ),
             ),
             Expanded(
               child: TextField(
-                controller: _textEditingController,
+                controller: controller,
                 decoration: InputDecoration(
                   hintText:
                       isImageSaving ? "Ссылка на изображение" : "Сообщение",
@@ -223,7 +235,10 @@ class _ChatTextField extends StatelessWidget {
               ),
             ),
             IconButton(
-              onPressed: () => onSendPressed(_textEditingController.text),
+              onPressed: () {
+                onSendPressed(controller.text);
+                controller.clear();
+              },
               icon: Icon(
                 isImageSaving ? Icons.save_as : Icons.send,
               ),
@@ -238,26 +253,22 @@ class _ChatTextField extends StatelessWidget {
 
 class _ChatAppBar extends StatelessWidget {
   final VoidCallback onUpdatePressed;
-  final TextEditingController controller;
+  final String topicName;
 
   const _ChatAppBar({
     required this.onUpdatePressed,
-    required this.controller,
+    required this.topicName,
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          IconButton(
-            onPressed: onUpdatePressed,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
+      actions: [IconButton(
+        onPressed: onUpdatePressed,
+        icon: const Icon(Icons.refresh),
+      ),],
+      title: Center(child: Text(topicName)),
     );
   }
 }
@@ -272,30 +283,29 @@ class _ChatMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(18.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _ChatAvatar(userData: chatData.chatUserDto),
-          SizedBox(
-            width: 8,
-          ),
+          if (chatData.chatUserDto is! ChatUserLocalDto) ...[_ChatAvatar(userData: chatData.chatUserDto),
+            const SizedBox(
+              width: 8,
+            ),],
           Expanded(
             child: Material(
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
                 bottomLeft: chatData.chatUserDto is ChatUserLocalDto
-                    ? Radius.circular(16)
-                    : Radius.circular(0),
+                    ? const Radius.circular(16)
+                    : const Radius.circular(0),
                 bottomRight: chatData.chatUserDto is ChatUserLocalDto
-                    ? Radius.circular(0)
-                    : Radius.circular(16),
+                    ? const Radius.circular(0)
+                    : const Radius.circular(16),
               ),
               color: chatData.chatUserDto is ChatUserLocalDto
-                  ? colorScheme.primary.withOpacity(.1)
+                  ? Colors.black38
                   : Colors.white38,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -306,8 +316,7 @@ class _ChatMessage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      // chatData.chatUserDto.name ?? '',
-                      chatData.runtimeType.toString(),
+                      chatData.chatUserDto.name ?? 'anon',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
@@ -324,8 +333,8 @@ class _ChatMessage extends StatelessWidget {
                         onPressed: () async {
                           goToMapLocation(chatData);
                         },
-                        child:
-                            Text("нажмите, чтобы отобразить геолокацию места"),
+                        child: const Text(
+                            "нажмите, чтобы отобразить геолокацию места"),
                       )
                     ]
                   ],
@@ -333,6 +342,11 @@ class _ChatMessage extends StatelessWidget {
               ),
             ),
           ),
+          if (chatData.chatUserDto is ChatUserLocalDto) ...[
+            const SizedBox(
+              width: 8,
+            ),
+            _ChatAvatar(userData: chatData.chatUserDto),],
         ],
       ),
     );
@@ -377,6 +391,7 @@ class _ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // print('${userData.name!.split(' ').first[0]}${userData.name!.split(' ').last[0]}');
     final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
@@ -391,13 +406,13 @@ class _ChatAvatar extends StatelessWidget {
         child: Center(
           child: Text(
             userData.name != null
-                ? '${userData.name!.split(' ').first[0]}${userData.name!.split(' ').last[0]}'
+                ? '${userData.name!.split(' ').first[0]}${userData.name!.split(' ')[1][0]}'
                 : '',
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
+            //   style: TextStyle(
+            //     color: colorScheme.onPrimary,
+            //     fontWeight: FontWeight.bold,
+            //     fontSize: 24,
+            //   ),
           ),
         ),
       ),

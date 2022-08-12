@@ -20,6 +20,17 @@ abstract class ILocalRepository {
 
   /// delete user's token .
   void deleteToken();
+
+  /// Save user's token .
+  void saveUserName({
+    required String username,
+  });
+
+  /// get user's token .
+  String? getUserName();
+
+  /// delete user's token .
+  void deleteUserName();
 }
 
 /// Simple implementation of [IAuthRepository], using [SharedPreferences].
@@ -44,7 +55,7 @@ class LocalRepository implements ILocalRepository {
     if (tokenString != null) {
       return TokenDto(token: tokenString);
     } else {
-      throw AuthException("");
+      throw const AuthException("");
     }
   }
 
@@ -52,6 +63,28 @@ class LocalRepository implements ILocalRepository {
   void deleteToken() {
     _localStorage.remove(
       'token',
+    );
+  }
+
+  @override
+  void saveUserName({
+    required String username,
+  }) async {
+    _localStorage.setString('user', username);
+  }
+
+  @override
+  String? getUserName() {
+    final String? tokenString = _localStorage.getString(
+      'user',
+    );
+    return tokenString;
+  }
+
+  @override
+  void deleteUserName() {
+    _localStorage.remove(
+      'user',
     );
   }
 }

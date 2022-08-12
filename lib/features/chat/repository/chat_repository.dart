@@ -103,9 +103,10 @@ abstract class IChatRepository {
 /// Simple implementation of [IChatRepository], using [StudyJamClient].
 class ChatRepository implements IChatRepository {
   final StudyJamClient _studyJamClient;
+  final int _chatId;
 
   /// Constructor for [ChatRepository].
-  ChatRepository(this._studyJamClient);
+  ChatRepository(this._studyJamClient, this._chatId);
 
   @override
   Future<Iterable<ChatMessageDto>> getMessages() async {
@@ -122,7 +123,8 @@ class ChatRepository implements IChatRepository {
     if (message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
-    await _studyJamClient.sendMessage(SjMessageSendsDto(text: message));
+    await _studyJamClient
+        .sendMessage(SjMessageSendsDto(chatId: _chatId, text: message));
 
     final messages = await _fetchAllMessages();
 
@@ -138,6 +140,7 @@ class ChatRepository implements IChatRepository {
       throw InvalidMessageException('Message "$message" is too large.');
     }
     await _studyJamClient.sendMessage(SjMessageSendsDto(
+      chatId: _chatId,
       text: message,
       geopoint: location.toGeopoint(),
     ));
@@ -155,10 +158,11 @@ class ChatRepository implements IChatRepository {
     if (message != null && message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
-    if (images.length <= IChatRepository.maxImages) {
+    if (images.length > IChatRepository.maxImages) {
       throw const InvalidMessageException('Too much images');
     }
     await _studyJamClient.sendMessage(SjMessageSendsDto(
+      chatId: _chatId,
       text: message,
       images: images,
     ));
@@ -177,10 +181,11 @@ class ChatRepository implements IChatRepository {
     if (message != null && message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
-    if (images.length <= IChatRepository.maxImages) {
+    if (images.length > IChatRepository.maxImages) {
       throw const InvalidMessageException('Too much images');
     }
     await _studyJamClient.sendMessage(SjMessageSendsDto(
+      chatId: _chatId,
       text: message,
       images: images,
       geopoint: location.toGeopoint(),
@@ -215,7 +220,7 @@ class ChatRepository implements IChatRepository {
     // we're doing it in cycle.
     while (!isLimitBroken) {
       final batch = await _studyJamClient.getMessages(
-          lastMessageId: lastMessageId, limit: 10000);
+          chatId: _chatId, lastMessageId: lastMessageId, limit: 10000);
       messages.addAll(batch);
       lastMessageId = batch.last.chatId;
       if (batch.length < 10000) {
@@ -250,16 +255,28 @@ class ChatRepository implements IChatRepository {
             sjMessageDto: sjMessageDto,
             sjUserDto: users
                 .firstWhere((userDto) => userDto.id == sjMessageDto.userId),
+            isUserLocal: users
+                    .firstWhere((userDto) => userDto.id == sjMessageDto.userId)
+                    .id ==
+                localUser?.id,
           );
         }
       } else if (sjMessageDto.images == null) {
         return ChatMessageGeolocationDto.fromSJClient(
+          isUserLocal: users
+                  .firstWhere((userDto) => userDto.id == sjMessageDto.userId)
+                  .id ==
+              localUser?.id,
           sjMessageDto: sjMessageDto,
           sjUserDto:
               users.firstWhere((userDto) => userDto.id == sjMessageDto.userId),
         );
       } else {
         return ChatMessageImageLocationDto.fromSJClient(
+          isUserLocal: users
+                  .firstWhere((userDto) => userDto.id == sjMessageDto.userId)
+                  .id ==
+              localUser?.id,
           sjMessageDto: sjMessageDto,
           sjUserDto:
               users.firstWhere((userDto) => userDto.id == sjMessageDto.userId),

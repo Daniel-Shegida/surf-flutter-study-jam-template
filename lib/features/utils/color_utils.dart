@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+/// взятый кусок библиотеки эпохи до null safety
 class ColorUtils {
   static int _hash(String value) {
     int hash = 0;
-    value.runes.forEach((code) {
+    for (var code in value.runes) {
       hash = code + ((hash << 5) - hash);
-    });
+    }
     return hash;
   }
 

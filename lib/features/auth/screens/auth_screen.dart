@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:surf_practice_chat_flutter/features/auth/exceptions/auth_exception.dart';
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
-import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
-import 'package:surf_practice_chat_flutter/features/chat/repository/location_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
+import 'package:surf_practice_chat_flutter/features/topics/repository/chart_topics_repository.dart';
+import 'package:surf_practice_chat_flutter/features/topics/screens/topics_screen.dart';
 import 'package:surf_practice_chat_flutter/features/utils/dialog_controller.dart';
 import 'package:surf_study_jam/surf_study_jam.dart';
 
@@ -96,8 +96,11 @@ class _AuthScreenState extends State<AuthScreen> {
         password: password,
       );
       _localRep.saveToken(token: token);
-
+      final currentUser =
+          await StudyJamClient().getAuthorizedClient(token.token).getUser();
       // ignore: use_build_context_synchronously
+      _localRep.saveUserName(username: currentUser?.username ?? 'none');
+
       _pushToChat(context, token);
     } on AuthException catch (e) {
       dialogController.showSnackBar(
@@ -114,11 +117,16 @@ class _AuthScreenState extends State<AuthScreen> {
       context,
       MaterialPageRoute(
         builder: (_) {
-          return ChatScreen(
-            chatRepository: ChatRepository(
+          // return ChatScreen(
+          //   chatRepository: ChatRepository(
+          //     StudyJamClient().getAuthorizedClient(token.token),
+          //   ),
+          //   locationRepository: LocationRepository(),
+          // );
+          return TopicsScreen(
+            topicRepository: ChatTopicsRepository(
               StudyJamClient().getAuthorizedClient(token.token),
             ),
-            locationRepository: LocationRepository(),
           );
         },
       ),
