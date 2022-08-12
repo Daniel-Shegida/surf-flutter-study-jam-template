@@ -46,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     _textController = TextEditingController();
+    _onUpdatePressed();
 
     super.initState();
   }
@@ -112,8 +113,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// todo(tester-dono): move it to logic things
+  // должно быть в model но его нет
   Future<Iterable<ChatMessageDto>> _sendMessage(String messageText) async {
+    // если содержит и изображение и гео
     if ((images != null) && isLocationMessage) {
       final location = await widget.locationRepository.determinePosition();
       return widget.chatRepository.sendImageLocationMessage(
@@ -124,11 +126,13 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         message: messageText,
       );
+      // если содержит только изображение
     } else if (images != null) {
       return widget.chatRepository.sendImageMessage(
         images: [images!],
         message: messageText,
       );
+      // если содержит только гео
     } else if (isLocationMessage) {
       final location = await widget.locationRepository.determinePosition();
 
@@ -139,6 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         message: messageText,
       );
+      // если ничего не содержит, кроме текста
     } else {
       return widget.chatRepository.sendMessage(
         messageText,
@@ -391,7 +396,6 @@ class _ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // print('${userData.name!.split(' ').first[0]}${userData.name!.split(' ').last[0]}');
     final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
@@ -408,11 +412,6 @@ class _ChatAvatar extends StatelessWidget {
             userData.name != null
                 ? '${userData.name!.split(' ').first[0]}${userData.name!.split(' ')[1][0]}'
                 : '',
-            //   style: TextStyle(
-            //     color: colorScheme.onPrimary,
-            //     fontWeight: FontWeight.bold,
-            //     fontSize: 24,
-            //   ),
           ),
         ),
       ),

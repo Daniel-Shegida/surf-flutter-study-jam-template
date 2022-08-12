@@ -43,6 +43,11 @@ class _TopicsScreenState extends State<TopicsScreen> {
     });
   }
 
+  void _onExitPressed(BuildContext context) {
+    context.read<LocalRepository>().deleteUserData();
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -67,6 +72,9 @@ class _TopicsScreenState extends State<TopicsScreen> {
         preferredSize: const Size.fromHeight(48),
         child: _TopicAppBar(
           onUpdatePressed: _loadData,
+          onExitPressed: () {
+            _onExitPressed(context);
+          },
           // _onUpdatePressed,
         ),
       ),
@@ -103,15 +111,21 @@ class _TopicBody extends StatelessWidget {
 
 class _TopicAppBar extends StatelessWidget {
   final VoidCallback onUpdatePressed;
+  final VoidCallback onExitPressed;
 
   const _TopicAppBar({
     required this.onUpdatePressed,
+    required this.onExitPressed,
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      leading: IconButton(
+        icon: Icon(Icons.exit_to_app),
+        onPressed: onExitPressed,
+      ),
       actions: [
         IconButton(
           onPressed: onUpdatePressed,

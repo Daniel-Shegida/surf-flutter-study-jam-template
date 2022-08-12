@@ -31,6 +31,9 @@ abstract class ILocalRepository {
 
   /// delete user's token .
   void deleteUserName();
+
+  /// delete user's data .
+  void deleteUserData();
 }
 
 /// Simple implementation of [IAuthRepository], using [SharedPreferences].
@@ -86,5 +89,11 @@ class LocalRepository implements ILocalRepository {
     _localStorage.remove(
       'user',
     );
+  }
+
+  @override
+  void deleteUserData() {
+    deleteUserName();
+    deleteToken();
   }
 }

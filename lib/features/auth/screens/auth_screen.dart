@@ -98,9 +98,9 @@ class _AuthScreenState extends State<AuthScreen> {
       _localRep.saveToken(token: token);
       final currentUser =
           await StudyJamClient().getAuthorizedClient(token.token).getUser();
-      // ignore: use_build_context_synchronously
       _localRep.saveUserName(username: currentUser?.username ?? 'none');
 
+      // ignore: use_build_context_synchronously
       _pushToChat(context, token);
     } on AuthException catch (e) {
       dialogController.showSnackBar(
@@ -117,12 +117,6 @@ class _AuthScreenState extends State<AuthScreen> {
       context,
       MaterialPageRoute(
         builder: (_) {
-          // return ChatScreen(
-          //   chatRepository: ChatRepository(
-          //     StudyJamClient().getAuthorizedClient(token.token),
-          //   ),
-          //   locationRepository: LocationRepository(),
-          // );
           return TopicsScreen(
             topicRepository: ChatTopicsRepository(
               StudyJamClient().getAuthorizedClient(token.token),
