@@ -4,6 +4,7 @@ import 'package:surf_practice_chat_flutter/features/auth/exceptions/auth_excepti
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/features/chat/repository/location_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
 import 'package:surf_practice_chat_flutter/features/utils/dialog_controller.dart';
@@ -103,12 +104,8 @@ class _AuthScreenState extends State<AuthScreen> {
         context,
         e.message,
       );
-    }
-    on Exception catch (_) {
-      dialogController.showSnackBar(
-        context,
-        'wow unknown error'
-      );
+    } on Exception catch (_) {
+      dialogController.showSnackBar(context, 'wow unknown error');
     }
   }
 
@@ -121,6 +118,7 @@ class _AuthScreenState extends State<AuthScreen> {
             chatRepository: ChatRepository(
               StudyJamClient().getAuthorizedClient(token.token),
             ),
+            locationRepository: LocationRepository(),
           );
         },
       ),

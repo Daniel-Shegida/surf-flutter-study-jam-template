@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:provider/provider.dart';
+import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_image_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_location_dto.dart';
@@ -8,6 +9,7 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_messsage_im
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/features/chat/repository/location_repository.dart';
 import 'package:surf_practice_chat_flutter/features/storage/repository/local_rep.dart';
 import 'package:surf_practice_chat_flutter/features/utils/color_utils.dart';
 
@@ -15,10 +17,12 @@ import 'package:surf_practice_chat_flutter/features/utils/color_utils.dart';
 class ChatScreen extends StatefulWidget {
   /// Repository for chat functionality.
   final IChatRepository chatRepository;
+  final ILocationRepository locationRepository;
 
   /// Constructor for [ChatScreen].
   const ChatScreen({
     required this.chatRepository,
+    required this.locationRepository,
     Key? key,
   }) : super(key: key);
 
@@ -29,14 +33,21 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _nameEditingController = TextEditingController();
 
-  late final LocalRepository _localRepository;
+  bool isLocationMessage = false;
+
+  bool isImageSaving = false;
+
+  /// todo: change to list max 10
+  String? images;
 
   Iterable<ChatMessageDto> _currentMessages = [];
 
   @override
   void initState() {
+    // late final LocalRepository _localRepository;
+
     super.initState();
-    _localRepository = context.read<LocalRepository>();
+    // _localRepository = context.read<LocalRepository>();
   }
 
   @override
@@ -60,7 +71,13 @@ class _ChatScreenState extends State<ChatScreen> {
               messages: _currentMessages,
             ),
           ),
-          _ChatTextField(onSendPressed: _onSendPressed),
+          _ChatTextField(
+            onSendPressed: _onSendPressed,
+            isLocationMessage: this.isLocationMessage,
+            onGeoPressed: _onGeoPressed,
+            isImageSaving: this.isImageSaving,
+            onImagePressed: _onImagePressed,
+          ),
         ],
       ),
     );
@@ -74,9 +91,58 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _onSendPressed(String messageText) async {
-    final messages = await widget.chatRepository.sendMessage(messageText);
+    if (isImageSaving) {
+      images = messageText;
+    } else {
+      final messages = await _sendMessage(messageText);
+      setState(() {
+        _currentMessages = messages;
+      });
+    }
+  }
+
+  /// todo(tester-dono): move it to logic things
+  Future<Iterable<ChatMessageDto>> _sendMessage(String messageText) async {
+    if ((images != null) && isLocationMessage) {
+      final location = await widget.locationRepository.determinePosition();
+      return widget.chatRepository.sendImageLocationMessage(
+        images: [images!],
+        location: ChatGeolocationDto(
+          latitude: location.latitude,
+          longitude: location.longitude,
+        ),
+        message: messageText,
+      );
+    } else if (images != null) {
+      return widget.chatRepository.sendImageMessage(
+        images: [images!],
+        message: messageText,
+      );
+    } else if (isLocationMessage) {
+      final location = await widget.locationRepository.determinePosition();
+      return widget.chatRepository.sendGeolocationMessage(
+        location: ChatGeolocationDto(
+          latitude: location.latitude,
+          longitude: location.longitude,
+        ),
+        message: messageText,
+      );
+    } else {
+      return widget.chatRepository.sendMessage(
+        messageText,
+      );
+    }
+  }
+
+  Future<void> _onGeoPressed() async {
     setState(() {
-      _currentMessages = messages;
+      isLocationMessage = !isLocationMessage;
+    });
+  }
+
+  Future<void> _onImagePressed() async {
+    setState(() {
+      isImageSaving = !isImageSaving;
     });
   }
 }
@@ -102,11 +168,19 @@ class _ChatBody extends StatelessWidget {
 
 class _ChatTextField extends StatelessWidget {
   final ValueChanged<String> onSendPressed;
+  final bool isLocationMessage;
+  final bool isImageSaving;
+  final VoidCallback onGeoPressed;
+  final VoidCallback onImagePressed;
 
   final _textEditingController = TextEditingController();
 
   _ChatTextField({
     required this.onSendPressed,
+    required this.isLocationMessage,
+    required this.onGeoPressed,
+    required this.isImageSaving,
+    required this.onImagePressed,
     Key? key,
   }) : super(key: key);
 
@@ -121,21 +195,38 @@ class _ChatTextField extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(
           bottom: mediaQuery.padding.bottom + 8,
-          left: 16,
+          left: 8,
         ),
         child: Row(
           children: [
+            IconButton(
+              onPressed: onImagePressed,
+              icon: Icon(
+                isImageSaving ? Icons.image : Icons.abc,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            IconButton(
+              onPressed: onGeoPressed,
+              icon: Icon(
+                Icons.ac_unit,
+                color: isLocationMessage ? Colors.blue : Colors.black,
+              ),
+            ),
             Expanded(
               child: TextField(
                 controller: _textEditingController,
-                decoration: const InputDecoration(
-                  hintText: 'Сообщение',
+                decoration: InputDecoration(
+                  hintText:
+                      isImageSaving ? "Ссылка на изображение" : "Сообщение",
                 ),
               ),
             ),
             IconButton(
               onPressed: () => onSendPressed(_textEditingController.text),
-              icon: const Icon(Icons.send),
+              icon: Icon(
+                isImageSaving ? Icons.save_as : Icons.send,
+              ),
               color: colorScheme.onSurface,
             ),
           ],
@@ -188,7 +279,9 @@ class _ChatMessage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _ChatAvatar(userData: chatData.chatUserDto),
-          SizedBox(width: 8,),
+          SizedBox(
+            width: 8,
+          ),
           Expanded(
             child: Material(
               borderRadius: BorderRadius.only(
@@ -196,7 +289,7 @@ class _ChatMessage extends StatelessWidget {
                 topRight: Radius.circular(16),
                 bottomLeft: chatData.chatUserDto is ChatUserLocalDto
                     ? Radius.circular(16)
-      : Radius.circular(0),
+                    : Radius.circular(0),
                 bottomRight: chatData.chatUserDto is ChatUserLocalDto
                     ? Radius.circular(0)
                     : Radius.circular(16),
@@ -231,7 +324,8 @@ class _ChatMessage extends StatelessWidget {
                         onPressed: () async {
                           goToMapLocation(chatData);
                         },
-                        child: Text("нажмите, чтобы отобразить геолокацию места"),
+                        child:
+                            Text("нажмите, чтобы отобразить геолокацию места"),
                       )
                     ]
                   ],

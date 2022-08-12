@@ -16,6 +16,9 @@ abstract class IChatRepository {
   /// Maximum length of one's message content,
   static const int maxMessageLength = 80;
 
+  /// Maximum length of one's message content,
+  static const int maxImages = 10;
+
   /// Returns messages [ChatMessageDto] from a source.
   ///
   /// Pay your attentions that there are two types of authors: [ChatUserDto]
@@ -51,6 +54,43 @@ abstract class IChatRepository {
     String? message,
   });
 
+  /// Sends the message by [images] contents. [message] is optional.
+  ///
+  /// Returns actual messages [ChatMessageDto] from a source (given your sent
+  /// [message]). Message with location point returns as
+  /// [ChatMessageGeolocationDto].
+  ///
+  /// Throws an [Exception] when some error appears.
+  ///
+  ///
+  /// If [message] is non-null, content mustn't be empty and longer than
+  /// [maxMessageLength]. Throws an [InvalidMessageException].
+  /// If [images] more than [IChatRepository.maxImages]
+  /// Throws an [InvalidMessageException].
+  Future<Iterable<ChatMessageDto>> sendImageMessage({
+    required List<String> images,
+    String? message,
+  });
+
+  /// Sends the message by [images] and [location] contents. [message] is optional.
+  ///
+  /// Returns actual messages [ChatMessageDto] from a source (given your sent
+  /// [message]). Message with location point returns as
+  /// [ChatMessageGeolocationDto].
+  ///
+  /// Throws an [Exception] when some error appears.
+  ///
+  ///
+  /// If [message] is non-null, content mustn't be empty and longer than
+  /// [maxMessageLength]. Throws an [InvalidMessageException].
+  /// If [images] more than [IChatRepository.maxImages]
+  /// Throws an [InvalidMessageException].
+  Future<Iterable<ChatMessageDto>> sendImageLocationMessage({
+    required List<String> images,
+    required ChatGeolocationDto location,
+    String? message,
+  });
+
   /// Retrieves chat's user via his [userId].
   ///
   ///
@@ -74,6 +114,9 @@ class ChatRepository implements IChatRepository {
     return messages;
   }
 
+  /// мне кажется, что не стоит разделять отправку сообщений на
+  /// несколько публичных методов, отдавая бизнесс логику из репозитория на
+  /// уровень ниже, но скорее всего мне кажется
   @override
   Future<Iterable<ChatMessageDto>> sendMessage(String message) async {
     if (message.length > IChatRepository.maxMessageLength) {
@@ -96,6 +139,50 @@ class ChatRepository implements IChatRepository {
     }
     await _studyJamClient.sendMessage(SjMessageSendsDto(
       text: message,
+      geopoint: location.toGeopoint(),
+    ));
+
+    final messages = await _fetchAllMessages();
+
+    return messages;
+  }
+
+  @override
+  Future<Iterable<ChatMessageDto>> sendImageMessage({
+    required List<String> images,
+    String? message,
+  }) async {
+    if (message != null && message.length > IChatRepository.maxMessageLength) {
+      throw InvalidMessageException('Message "$message" is too large.');
+    }
+    if (images.length <= IChatRepository.maxImages) {
+      throw const InvalidMessageException('Too much images');
+    }
+    await _studyJamClient.sendMessage(SjMessageSendsDto(
+      text: message,
+      images: images,
+    ));
+
+    final messages = await _fetchAllMessages();
+
+    return messages;
+  }
+
+  @override
+  Future<Iterable<ChatMessageDto>> sendImageLocationMessage({
+    required List<String> images,
+    required ChatGeolocationDto location,
+    String? message,
+  }) async {
+    if (message != null && message.length > IChatRepository.maxMessageLength) {
+      throw InvalidMessageException('Message "$message" is too large.');
+    }
+    if (images.length <= IChatRepository.maxImages) {
+      throw const InvalidMessageException('Too much images');
+    }
+    await _studyJamClient.sendMessage(SjMessageSendsDto(
+      text: message,
+      images: images,
       geopoint: location.toGeopoint(),
     ));
 
@@ -178,7 +265,6 @@ class ChatRepository implements IChatRepository {
               users.firstWhere((userDto) => userDto.id == sjMessageDto.userId),
         );
       }
-    }
-        ).toList();
+    }).toList();
   }
 }
