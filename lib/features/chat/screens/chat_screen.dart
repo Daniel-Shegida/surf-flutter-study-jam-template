@@ -31,7 +31,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   late final LocalRepository _localRepository;
 
-
   Iterable<ChatMessageDto> _currentMessages = [];
 
   @override
@@ -183,72 +182,88 @@ class _ChatMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      borderRadius: BorderRadius.circular(25.0),
-      color: chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary.withOpacity(.1) : Colors.red,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 18,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChatAvatar(userData: chatData.chatUserDto),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    // chatData.chatUserDto.name ?? '',
-              chatData.runtimeType.toString(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(chatData.message ?? ''),
-                  if (chatData is ChatMessageImageDto || chatData is ChatMessageImageLocationDto) ...[
-                    Wrap(
+    return Padding(
+      padding: const EdgeInsets.all(18.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _ChatAvatar(userData: chatData.chatUserDto),
+          SizedBox(width: 8,),
+          Expanded(
+            child: Material(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: chatData.chatUserDto is ChatUserLocalDto
+                    ? Radius.circular(16)
+      : Radius.circular(0),
+                bottomRight: chatData.chatUserDto is ChatUserLocalDto
+                    ? Radius.circular(0)
+                    : Radius.circular(16),
+              ),
+              color: chatData.chatUserDto is ChatUserLocalDto
+                  ? colorScheme.primary.withOpacity(.1)
+                  : Colors.white38,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 18,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      // chatData.chatUserDto.name ?? '',
+                      chatData.runtimeType.toString(),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(chatData.message ?? ''),
+                    if (chatData is ChatMessageImageDto ||
+                        chatData is ChatMessageImageLocationDto) ...[
+                      Wrap(
                         children: getListOfImeges(chatData),
-                    )
-                  ],
-                  if (chatData is ChatMessageGeolocationDto || chatData is ChatMessageImageLocationDto) ...[
-                    TextButton(
-                        onPressed: () async{
+                      )
+                    ],
+                    if (chatData is ChatMessageGeolocationDto ||
+                        chatData is ChatMessageImageLocationDto) ...[
+                      TextButton(
+                        onPressed: () async {
                           goToMapLocation(chatData);
                         },
-                      child: Text("нажмите, чтобы отобразить геолокацию места"),)
-                  ]
-                ],
+                        child: Text("нажмите, чтобы отобразить геолокацию места"),
+                      )
+                    ]
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 List<Widget> getListOfImeges(ChatMessageDto dto) {
-  if (dto is ChatMessageImageDto ) {
+  if (dto is ChatMessageImageDto) {
     return dto.images.urls.map((url) => Image.network(url)).toList();
-  } else if (dto is ChatMessageImageLocationDto ){
+  } else if (dto is ChatMessageImageLocationDto) {
     return dto.images.urls.map((url) => Image.network(url)).toList();
-  }
-  else {
+  } else {
     return [];
   }
 }
 
-void goToMapLocation(ChatMessageDto dto) async{
+void goToMapLocation(ChatMessageDto dto) async {
   final availableMaps = await MapLauncher.installedMaps;
 
-  if (dto is ChatMessageGeolocationDto ) {
+  if (dto is ChatMessageGeolocationDto) {
     await availableMaps.first.showMarker(
       coords: Coords(dto.location.latitude, dto.location.longitude),
       title: "Ocean Beach",
     );
-  } else if (dto is ChatMessageImageLocationDto ){
+  } else if (dto is ChatMessageImageLocationDto) {
     await availableMaps.first.showMarker(
       coords: Coords(dto.location.latitude, dto.location.longitude),
       title: "Ocean Beach",
@@ -275,7 +290,7 @@ class _ChatAvatar extends StatelessWidget {
       height: _size,
       child: Material(
         // color: colorScheme.primary,
-        color:  userData.name != null
+        color: userData.name != null
             ? ColorUtils.stringToColor(userData.name!)
             : colorScheme.primary,
         shape: const CircleBorder(),
