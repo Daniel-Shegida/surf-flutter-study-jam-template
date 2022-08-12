@@ -53,6 +53,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
         onPressed: () {
           Navigator.push<CreateTopicScreen>(
             context,
