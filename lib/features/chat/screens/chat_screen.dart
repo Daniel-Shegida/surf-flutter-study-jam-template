@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:map_launcher/map_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
+import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_location_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
@@ -203,6 +205,32 @@ class _ChatMessage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(chatData.message ?? ''),
+                  // if (chatData.) ...[
+                  //   TextButton(
+                  //     onPressed: () async{
+                  //       final availableMaps = await MapLauncher.installedMaps;
+                  //       print(availableMaps); // [AvailableMap { mapName: Google Maps, mapType: google }, ...]
+                  //
+                  //       await availableMaps.first.showMarker(
+                  //         coords: Coords(37.759392, -122.5107336),
+                  //         title: "Ocean Beach",
+                  //       );
+                  //     },
+                  //     child: Text("нажмите, чтобы отобразить геолокацию места"),)
+                  // ]
+                  if (chatData is ChatMessageGeolocationDto) ...[
+                    TextButton(
+                        onPressed: () async{
+                          final availableMaps = await MapLauncher.installedMaps;
+                          print(availableMaps); // [AvailableMap { mapName: Google Maps, mapType: google }, ...]
+
+                          await availableMaps.first.showMarker(
+                            coords: Coords(37.759392, -122.5107336),
+                            title: "Ocean Beach",
+                          );
+                        },
+                      child: Text("нажмите, чтобы отобразить геолокацию места"),)
+                  ]
                 ],
               ),
             ),
