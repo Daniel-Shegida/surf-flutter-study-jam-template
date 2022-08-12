@@ -29,7 +29,6 @@ class _TopicsScreenState extends State<TopicsScreen> {
   void initState() {
     _loadData();
     super.initState();
-    // _localRepository = context.read<LocalRepository>();
   }
 
   void _loadData() async {
@@ -123,7 +122,7 @@ class _TopicAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppBar(
       leading: IconButton(
-        icon: Icon(Icons.exit_to_app),
+        icon: const Icon(Icons.exit_to_app),
         onPressed: onExitPressed,
       ),
       actions: [
